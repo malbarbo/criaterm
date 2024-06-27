@@ -1,2 +1,3 @@
 # criaterm
-A small Python library for creating terminal applications
+
+A small Python library for creating terminal applications.
