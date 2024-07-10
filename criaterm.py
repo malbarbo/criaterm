@@ -7,7 +7,12 @@ import os
 import sys
 
 __all__ = [
-    # iteraction
+    # input
+    'input_int',
+    'input_float',
+    'input_bool',
+
+    # iterative apps
     'run_app',
 
     # types
@@ -42,8 +47,140 @@ __all__ = [
     'strikethrough',
 ]
 
-S = TypeVar("S")
 
+##################
+# Input
+##################
+
+# TODO: write docs for input functions
+
+def input_int(prompt: str = '',
+              err: str = '',
+              min: int | None = None,
+              max: int | None = None) -> int:
+    '''
+    >>> with fake_input('32.0', '12', '32') as _:
+    ...     n = input_int('Number: ', min=15, err='no for you')
+    Number: 32.0
+    no for you
+    Number: 12
+    no for you
+    Number: 32
+    >>> n
+    32
+    '''
+    while True:
+        try:
+            val = int(_input(prompt))
+            if min and val < min or max and max < val:
+                raise ValueError()
+            return val
+        except ValueError as _:
+            if err:
+                print(err)
+
+
+def input_float(prompt: str = '',
+                err: str = '',
+                min: int | None = None,
+                max: int | None = None) -> float:
+    '''
+    >>> with fake_input('num', '102.32', '50.65') as _:
+    ...     n = input_float('Number: ', max=100.0)
+    Number: num
+    Number: 102.32
+    Number: 50.65
+    >>> n
+    50.65
+    '''
+    while True:
+        try:
+            val = float(_input(prompt))
+            if min and val < min or max and max < val:
+                raise ValueError()
+            return val
+        except ValueError as _:
+            if err:
+                print(err)
+
+
+def input_bool(prompt: str = '',
+               err: str = '',
+               yes: list[str] = ['y', 'yes'],
+               no: list[str] = ['n', 'no']) -> bool:
+    '''
+    >>> with fake_input('wrong', 'y') as _:
+    ...     s = input_bool('Continue? ', err='Again...')
+    Continue? wrong
+    Again...
+    Continue? y
+    >>> s
+    True
+    >>> with fake_input('no') as _:
+    ...     s = input_bool('Continue? ')
+    Continue? no
+    >>> s
+    False
+    '''
+    while True:
+        val = _input(prompt)
+        if val in yes:
+            return True
+        if val in no:
+            return False
+        if err:
+            print(err)
+
+
+_mocked_input: list[str] | None = None
+
+
+def _input(prompt: str = '') -> str:
+    '''
+    >>> with fake_input() as _:
+    ...     try:
+    ...         _input()
+    ...         assert False
+    ...     except EOFError:
+    ...         pass
+    '''
+    global _mocked_input
+    if _mocked_input is not None:
+        print(prompt, end='')
+        if len(_mocked_input) == 0:
+            raise EOFError()
+        s = _mocked_input[0]
+        _mocked_input = _mocked_input[1:]
+        print(s)
+        return s
+    else:
+        return input(prompt)
+
+
+class fake_input:
+    input: list[str] | None
+
+    def __init__(self, *strs: str) -> None:
+        self.input = list(strs)
+
+    def __enter__(self) -> fake_input:
+        global _mocked_input
+        # save _mocked_input in input
+        self.input, _mocked_input = _mocked_input, self.input
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _exception_traceback) -> None:
+        global _mocked_input
+        # restore _mocked_input
+        _mocked_input = self.input
+
+
+##################
+# Interactive apps
+##################
+
+
+S = TypeVar("S")
 
 def run_app(state: S,
             to_grid: Callable[[S], CharGrid],
