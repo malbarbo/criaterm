@@ -57,7 +57,8 @@ __all__ = [
 def input_int(prompt: str = '',
               err: str = '',
               min: int | None = None,
-              max: int | None = None) -> int:
+              max: int | None = None,
+              default: int | None = None) -> int:
     '''
     >>> with fake_input('32.0', '12', '32') as _:
     ...     n = input_int('Number: ', min=15, err='no for you')
@@ -68,10 +69,17 @@ def input_int(prompt: str = '',
     Number: 32
     >>> n
     32
+    >>> with fake_input('') as _:
+    ...     n = input_int('?', default=-12)
+    ?
+    >>> n
+    -12
     '''
     while True:
         try:
-            val = int(_input(prompt))
+            if (s := _input(prompt)) == '' and default is not None:
+                return default
+            val = int(s)
             if min and val < min or max and max < val:
                 raise ValueError()
             return val
@@ -82,8 +90,9 @@ def input_int(prompt: str = '',
 
 def input_float(prompt: str = '',
                 err: str = '',
-                min: int | None = None,
-                max: int | None = None) -> float:
+                min: float | None = None,
+                max: float | None = None,
+                default: float | None = None) -> float:
     '''
     >>> with fake_input('num', '102.32', '50.65') as _:
     ...     n = input_float('Number: ', max=100.0)
@@ -92,10 +101,17 @@ def input_float(prompt: str = '',
     Number: 50.65
     >>> n
     50.65
+    >>> with fake_input('') as _:
+    ...     n = input_int('?', default=123.456)
+    ?
+    >>> n
+    123.456
     '''
     while True:
         try:
-            val = float(_input(prompt))
+            if (s := _input(prompt)) == '' and default is not None:
+                return default
+            val = float(s)
             if min and val < min or max and max < val:
                 raise ValueError()
             return val
@@ -107,7 +123,8 @@ def input_float(prompt: str = '',
 def input_bool(prompt: str = '',
                err: str = '',
                yes: list[str] = ['y', 'yes'],
-               no: list[str] = ['n', 'no']) -> bool:
+               no: list[str] = ['n', 'no'],
+               default: bool | None = None) -> bool:
     '''
     >>> with fake_input('wrong', 'y') as _:
     ...     s = input_bool('Continue? ', err='Again...')
@@ -121,12 +138,19 @@ def input_bool(prompt: str = '',
     Continue? no
     >>> s
     False
+    >>> with fake_input('') as _:
+    ...     s = input_bool('Continue?', default=True)
+    Continue?
+    >>> s
+    True
     '''
     while True:
         val = _input(prompt)
-        if val in yes:
+        if val == '' and default is not None:
+            return default
+        if val.lower() in map(str.lower, yes):
             return True
-        if val in no:
+        if val.lower() in map(str.lower, no):
             return False
         if err:
             print(err)
